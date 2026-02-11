@@ -1,0 +1,44 @@
+name: Scrape and publish RFPs
+
+on:
+  schedule:
+    # daily at 02:00 UTC — adjust to your needs
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # so push back with GITHUB_TOKEN works
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run crawler and produce docs/data.json
+        run: |
+          python scripts/run_and_write_json.py
+
+      - name: Commit and push updated docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data.json || true
+          # Only commit if changes present
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update scraped RFPs (automated)" || true
+            git push origin HEAD:main
+          else
+            echo "No changes to commit."
+          fi
