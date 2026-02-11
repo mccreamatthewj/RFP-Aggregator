@@ -10,3 +10,9 @@ logs/
 # Build output
 /dist/
 /build/
+
+# Local credentials and DB
+credentials.json
+.env
+data/*.db
+*.sqlite
