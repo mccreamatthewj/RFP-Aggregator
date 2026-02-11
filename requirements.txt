@@ -1,12 +1,11 @@
 requests
 beautifulsoup4
-lxml
 google-auth
-google-auth-oauthlib
 google-auth-httplib2
+google-auth-oauthlib
 google-api-python-client
 gspread
 oauth2client
 streamlit
 python-dotenv
-selenium
+lxml
