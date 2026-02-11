@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>RFP Aggregator — Indiana</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    tr:nth-child(even) { background: #fafafa; }
+    input, button { padding: 6px; margin: 6px 0; }
+    .small { font-size: 0.9rem; color: #555; }
+    .container { max-width: 1100px; margin: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>RFP Aggregator — Indiana</h1>
+    <p class="small">This page is auto-generated from the crawler output (docs/data.json).</p>
+
+    <div>
+      <input id="filter" placeholder="Filter title/url..." style="width:60%" />
+      <button id="refresh">Refresh</button>
+    </div>
+
+    <div id="status" class="small">Loading…</div>
+
+    <table id="rfp-table" aria-live="polite">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Event ID</th>
+          <th>Agency</th>
+          <th>Due Date</th>
+          <th>Contact</th>
+          <th>URL</th>
+          <th>Discovered</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const DATA_PATH = "data.json";
+    const statusEl = document.getElementById("status");
+    const tbody = document.querySelector("#rfp-table tbody");
+    const filterInput = document.getElementById("filter");
+    const refreshBtn = document.getElementById("refresh");
+
+    async function loadData() {
+      statusEl.textContent = "Loading data...";
+      try {
+        const res = await fetch(DATA_PATH + "?ts=" + Date.now(), {cache: "no-store"});
+        if (!res.ok) throw new Error("Fetch failed: " + res.status);
+        const data = await res.json();
+        renderTable(data);
+        statusEl.textContent = `Loaded ${data.length} items`;
+      } catch (err) {
+        statusEl.textContent = "Error loading data: " + err.message;
+      }
+    }
+
+    function renderTable(data) {
+      const q = (filterInput.value || "").toLowerCase().trim();
+      const rows = data.filter(item => {
+        if (!q) return true;
+        const hay = (item.title + " " + (item.url||"")).toLowerCase();
+        return hay.includes(q);
+      });
+      tbody.innerHTML = "";
+      for (const it of rows) {
+        const tr = document.createElement("tr");
+
+        const mk = txt => {
+          const td = document.createElement("td");
+          td.textContent = txt || "";
+          return td;
+        };
+
+        tr.appendChild(mk(it.title));
+        tr.appendChild(mk(it.event_id));
+        tr.appendChild(mk(it.agency));
+        tr.appendChild(mk(it.due_date));
+        tr.appendChild(mk(it.contact_email));
+        const urlTd = document.createElement("td");
+        if (it.url) {
+          const a = document.createElement("a");
+          a.href = it.url;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = "link";
+          urlTd.appendChild(a);
+        }
+        tr.appendChild(urlTd);
+        tr.appendChild(mk(it.discovered_at));
+        tbody.appendChild(tr);
+      }
+    }
+
+    filterInput.addEventListener("input", () => loadData());
+    refreshBtn.addEventListener("click", () => loadData());
+    loadData();
+  </script>
+</body>
+</html>
